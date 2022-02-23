@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { projectStorage } from '../firebase/config';
+import { projectStorage, projectFirestore } from '../firebase/config';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const useStorage = (file) => {
   const [progress, setProgress] = useState(0);
@@ -10,6 +11,8 @@ const useStorage = (file) => {
   useEffect(() => {
     // references
     const storageRef = ref(projectStorage, file.name);
+    const collectionRef = collection(projectFirestore, 'images');
+
     const uploadTask = uploadBytesResumable(storageRef, file);
 
     uploadTask.on(
@@ -23,6 +26,11 @@ const useStorage = (file) => {
       },
       async () => {
         const url = await getDownloadURL(uploadTask.snapshot.ref);
+        const createdAt = serverTimestamp();
+        addDoc(collectionRef, {
+          url,
+          createdAt,
+        });
         setUrl(url);
       }
     );
